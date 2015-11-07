@@ -13,7 +13,17 @@ var sqlite3 = require('sqlite3').verbose(),
     struct = require('ref-struct');
 /* allows use of C++ structures for C++ JS interactions, critical 
 queryfor = require('./sql-queries');*/
+var dllLocation = (__dirname + '\\ocgcore-64.dll');
 
+function PointerConstructor(name) {
+    return {
+        size: 1, //default is a byte
+        indirection: 1,
+        get: function () {},
+        set: function () {},
+        name: name
+    };
+}
 
 function constructDatabase(targetDB, targetFolder) {
     // create instance of card database in memory 2MB, prevents sychronous read request and server lag.
@@ -42,17 +52,18 @@ function constructDatabase(targetDB, targetFolder) {
         //function used by the core to process DB
         var code = request.code;
 
-        return struct({
-            code: code,
-            alias: cards[code].alias || 0,
-            setcode: cards[code].setcode || 0,
-            type: cards[code].type || 0,
-            level: cards[code].level || 1,
-            attribute: cards[code].attribute || 0,
-            race: cards[code].race || 0,
-            attack: cards[code].attack || 0,
-            defence: cards[code].defense || 0
-        });
+        //        return struct({
+        //            code: code,
+        //            alias: cards[code].alias || 0,
+        //            setcode: cards[code].setcode || 0,
+        //            type: cards[code].type || 0,
+        //            level: cards[code].level || 1,
+        //            attribute: cards[code].attribute || 0,
+        //            race: cards[code].race || 0,
+        //            attack: cards[code].attack || 0,
+        //            defence: cards[code].defense || 0
+        //        });
+        return new Buffer(0);
     };
 }
 
@@ -94,18 +105,16 @@ var settings = {
     card_reader: constructDatabase('./card.cdb'), //needs to be configurable
     script_reader: constructScripts('./scripts/') //needs to be configurable
 };
-console.log((__dirname + '\\ocgwrapper\\ocgcore-64.dll'));
-fs.exists((__dirname + '\\ocgcore-64.dll'), function (el, no) {
-    console.log(el, no);
-});
 
-var connect = function (settings) {
+
+
+var connect = function (dllLocation, settings) {
     // create new instance of flourohydride/ygopro/ocgcore
-
-    var ocgapi = ffi.Library((__dirname + '\\ocgcore-64.dll'), {
-        'set_script_reader': ['void', ['uint32']],
-        'set_card_reader': ['void', ['uint32']],
-        'set_message_handler': ['void', ['uint32']],
+    console.log(settings.card_reader);
+    var ocgapi = ffi.Library(dllLocation, {
+        'set_script_reader': ['void', ['pointer']],
+        'set_card_reader': ['void', ['pointer']],
+        'set_message_handler': ['void', ['pointer']],
         'create_duel': ['pointer', ['uint32']],
         'start_duel': ['void', ['pointer', 'int']],
         'end_duel': ['void', ['pointer']],
@@ -123,10 +132,17 @@ var connect = function (settings) {
         'set_responseb': ['void', ['pointer', 'byte*']],
         'preload_script': ['int32', ['pointer', 'char*', 'int32']]
     });
-    ocgapi.set_script_reader(settings.script_reader());
+    console.log(ocgapi.set_script_reader(new Buffer(), function () {
+        console.log('returned');
+    }));
     return ocgapi;
 };
+fs.exists(dllLocation, function (dllDetected) {
+    if (dllDetected) {
+        connect(dllLocation, settings);
+    } else {
+        console.log('[]:Error could not find OCGCore at:', dllLocation);
+    }
+});
 
 module.exports.core = connect;
-
-connect(settings);
