@@ -94,21 +94,24 @@ var settings = {
     card_reader: constructDatabase('./card.cdb'), //needs to be configurable
     script_reader: constructScripts('./scripts/') //needs to be configurable
 };
+console.log((__dirname + '\\ocgwrapper\\ocgcore-64.dll'));
+fs.exists((__dirname + '\\ocgcore-64.dll'), function (el, no) {
+    console.log(el, no);
+});
 
-
-module.exports.core = function (settings) {
+var connect = function (settings) {
     // create new instance of flourohydride/ygopro/ocgcore
 
-    this.ocgapi = ffi.Library(__dirname + '/ocgcore.dll', {
-        'set_script_reader': ['void', settings.script_reader],
-        'set_card_reader': ['void', settings.card_reader],
-        'set_message_handler': ['void', console.log],
+    var ocgapi = ffi.Library((__dirname + '\\ocgcore-64.dll'), {
+        'set_script_reader': ['void', ['uint32']],
+        'set_card_reader': ['void', ['uint32']],
+        'set_message_handler': ['void', ['uint32']],
         'create_duel': ['pointer', ['uint32']],
         'start_duel': ['void', ['pointer', 'int']],
         'end_duel': ['void', ['pointer']],
         'set_player_info': ['void', ['pointer', 'int32', 'int32', 'int32', 'int32']],
         'get_log_message': ['void', ['pointer', 'byte*']],
-        'get_message': ['int32', ['pointer' /*, get_message_pointer*/ ]],
+        'get_message': ['int32', ['pointer', 'pointer']],
         'process': ['int32', ['pointer']],
         'new_card': ['void', ['pointer', 'uint32', 'uint8', 'uint8', 'uint8', 'uint8', 'uint8']],
         'new_tag_card': ['void', ['pointer', 'uint32', 'uint8', 'uint8']],
@@ -120,4 +123,10 @@ module.exports.core = function (settings) {
         'set_responseb': ['void', ['pointer', 'byte*']],
         'preload_script': ['int32', ['pointer', 'char*', 'int32']]
     });
+    ocgapi.set_script_reader(settings.script_reader());
+    return ocgapi;
 };
+
+module.exports.core = connect;
+
+connect(settings);
