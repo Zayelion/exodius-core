@@ -15,10 +15,8 @@ var dll = process.env.DLL || '\\ocgcore.dll',
 
 function InitServer() {
     // When a user connects, create an instance and allow the to duel, clean up after.
-    var parsePackets = require('./parsepackets.js'),
-        ws;
 
-    ws = new WebSocketServer({
+    var ws = new WebSocketServer({
         port: 8082
     });
     ws.on('connection', function connection(socket) {

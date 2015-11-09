@@ -1,4 +1,4 @@
-/*jslint node:true */
+/*jslint node:true, plusplus : true */
 
 'use strict';
 
@@ -84,6 +84,41 @@ function constructScripts(targetFolder) {
     };
 }
 
+
+//This needs to be replaced with Irates, which I am pretty sure is better in every other way.
+function banlist(lflist) {
+    var banlistcount = 0,
+        output = [],
+        i,
+        toArray,
+        topush;
+    for (i = 0; lflist.length > 0; i++) {
+        if (lflist[i] !== undefined) {
+            if (lflist[i] !== '') {
+                if (lflist[i][0] !== '#') {
+                    if (lflist[i][0] === '!') {
+                        banlistcount++;
+                        if (!output[banlistcount]) {
+                            output[banlistcount] = [];
+                        }
+                    } else {
+                        if (lflist[i].indexOf(' ') > -1) {
+                            toArray = lflist[i].split(' ');
+                            topush = {
+                                cardId: toArray[0],
+                                quantity: toArray[1]
+                            };
+
+                            output[banlistcount].push(topush);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return output;
+}
+
 function initDuel(dllLocation, settings) {
     var duelptr,
         seed = Math.floor((Math.random() * 4294967295)), // random uint32
@@ -118,14 +153,17 @@ function initDuel(dllLocation, settings) {
     duelptr = ocgapi.create_duel(seed); //generate a duel.
     return {
         pointer: duelptr,
-        duel: ocgapi
+        duel: ocgapi,
+        banlist: banlist(settings.lflist)
     };
 }
 
-function ocgwrapper(dllLocation, cardDBLocation, scriptFolder) {
+
+function ocgwrapper(dllLocation, cardDBLocation, scriptFolder, lflist) {
     var settings = {
         card_reader: constructDatabase(cardDBLocation), //needs to be configurable
-        script_reader: constructScripts(scriptFolder) //needs to be configurable
+        script_reader: constructScripts(scriptFolder), //needs to be configurable
+        lflist: fs.readFileSync(lflist).toString().split("\r\n")
     };
     fs.exists(dllLocation, function (dllDetected) {
         if (dllDetected) {
