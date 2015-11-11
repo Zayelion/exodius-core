@@ -18,8 +18,14 @@ var game = {
 
 };
 
-function processMessage() {
-
+function processMessage(message) {
+    switch (message.command) {
+    case 'startDuel':
+        game = new Duel(dll, db, scripts, lflist);
+        break;
+    default:
+        return;
+    }
 }
 
 function InitServer() {
@@ -31,13 +37,14 @@ function InitServer() {
     ws.on('connection', function connection(socket) {
 
         socket.on('message', function incoming(data) {
+            var message;
             try {
-                var message = JSON.parse(data);
+                message = JSON.parse(data);
             } catch (e) {
                 console.log('[Duel]:', 'Improperly formated data recieved');
                 return;
             }
-            processMessage();
+            processMessage(message);
         });
         socket.on('close', function close() {
             console.log('[Duel]:', 'socket, disconnected');

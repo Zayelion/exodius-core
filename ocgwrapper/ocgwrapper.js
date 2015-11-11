@@ -119,6 +119,22 @@ function banlist(lflist) {
     return output;
 }
 
+function wrapDuel(duel) {
+    duel.InitPlayers = function () {};
+    duel.AddCard = function () {};
+    duel.AddTagCard = function () {};
+    duel.Start = function () {};
+    duel.Proces = function () {};
+    duel.SetResponse = function () {}; //this is two functions in iceygo's code.
+    duel.QueryFieldCount = function () {};
+    duel.QueryFieldCard = function () {};
+    duel.QueryCard = function () {};
+    duel.QueryFieldInfo = function () {};
+    duel.End = function () {};
+
+    return duel;
+}
+
 function initDuel(dllLocation, settings) {
     var duelptr,
         seed = Math.floor((Math.random() * 4294967295)), // random uint32
@@ -151,11 +167,11 @@ function initDuel(dllLocation, settings) {
     ocgapi.set_script_reader(new Buffer([0]));
     ocgapi.set_message_handler(new Buffer([0]));
     duelptr = ocgapi.create_duel(seed); //generate a duel.
-    return {
+    return wrapDuel({
         pointer: duelptr,
         duel: ocgapi,
         banlist: banlist(settings.lflist)
-    };
+    });
 }
 
 
