@@ -120,9 +120,16 @@ function banlist(lflist) {
 }
 
 function wrapDuel(duel) {
-    duel.InitPlayers = function () {};
-    duel.AddCard = function () {};
-    duel.AddTagCard = function () {};
+    duel.InitPlayers = function (startLp, startHand, drawCount) {
+        duel.set_player_info(duel.pointer, 0, startLp, startHand, drawCount);
+        duel.set_player_info(duel.pointer, 1, startLp, startHand, drawCount);
+    };
+    duel.AddCard = function (cardId, owner, location) {
+        duel.new_card(duel.pointer, cardId, owner, owner, location, 0, 0);
+    };
+    duel.AddTagCard = function (cardId, owner, location) {
+        duel.new_tag_card(duel.pointer, cardId, owner, location);
+    };
     duel.Start = function () {};
     duel.Proces = function () {};
     duel.SetResponse = function () {}; //this is two functions in iceygo's code.
