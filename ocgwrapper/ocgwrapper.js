@@ -8,8 +8,8 @@ var sqlite3 = require('sqlite3').verbose(), // access databse file */
     ref = require('ref'), // allows use of C++ pointers for C++ JS interactions, critical */
     struct = require('ref-struct'), // allows use of C++ structures for C++ JS interactions, critical 
     arrayType = require('ref-array'), // allows generation of arraybuffers to use as pointers (engineBuffer[x])
-    char = ref.types.char,
-    char_engineBuffer = arrayType(char);
+    char_array = arrayType(ref.types.char),
+    byte_array = arrayType(ref.types.byte);
 //queryfor = require('./sql-queries'); * /
 
 function constructDatabase(targetDB, targetFolder) {
@@ -146,9 +146,9 @@ function wrapDuel(duel) {
         duel.start_duel(duel.pointer, options);
     };
     duel.Proces = function () {
-        //char engineBuffer[0x1000]; // pointer
-        var engineBuffer = ref.alloc(char_engineBuffer(0x1000)),
-            engFlag = 0,
+        //char engineBuffer[0x1000]; // pointer, referenced in other calls.
+        duel.engineBuffer = char_array(0x1000);
+        var engFlag = 0,
             engLen = 0,
             stop = 0,
             result;
@@ -160,8 +160,8 @@ function wrapDuel(duel) {
             engLen = result & 0xffff;
             engFlag = result >> 16;
             if (engLen > 0) {
-                duel.get_message(duel.pointer, engineBuffer);
-                stop = duel.analyze(engineBuffer, engLen);
+                duel.get_message(duel.pointer, duel.engineBuffer);
+                stop = duel.analyze(duel.engineBuffer, engLen);
             }
         }
         if (stop === 2) {
@@ -169,12 +169,44 @@ function wrapDuel(duel) {
         }
 
     };
-    duel.SetResponse = function () {}; //this is two functions in iceygo's code.
-    duel.QueryFieldCount = function () {};
-    duel.QueryFieldCard = function () {};
-    duel.QueryCard = function () {};
-    duel.QueryFieldInfo = function () {};
-    duel.End = function () {};
+    duel.SetResponse = function (resp) { //takes a number or an array.
+        //this is two functions in iceygo's code so we are going to do a parameter check
+        // split it into the two calls.
+        if (typeof resp === 'number') {
+            duel.set_responsei(duel.pointer, resp);
+            return;
+        }
+        //marshall the array [1,0,3,2,1,0 ...] into a buffer with proper typing
+
+        if (resp.Length > 64) {
+            return;
+        }
+        var buf = new Buffer(resp);
+        duel.set_responseb(duel.pointer, buf);
+    };
+    duel.QueryFieldCount = function (player, location) {
+        return duel.query_field_count(duel.pointer, player, location);
+    };
+    duel.QueryFieldCard = function (player, location, flag, useCache) {
+        useCache = (useCache) ? 1 : 0;
+        //use the buffer from duel.Process();
+        var len = duel.query_field_card(duel.pointer, player, location, flag, duel.engineBuffer, useCache);
+        return new Buffer(duel.engineBuffer, 0, len);
+    };
+    duel.QueryCard = function (player, location, sequence, flag) {
+        var len = duel.query_card(duel.pointer, player, location, sequence, flag, duel.engineBuffer, 0);
+        return new Buffer(duel.engineBuffer, 0, len);
+    };
+    duel.QueryFieldInfo = function () {
+        duel.query_field_info(duel.pointer, duel.engineBuffer);
+        return new Buffer(duel.engineBuffer, 0, 256);
+
+    };
+    duel.End = function () {
+        duel.end_duel(duel.pointer);
+        duel.pointer = undefined;
+        delete duel.pointer;
+    };
 
     return duel;
 }
