@@ -1,19 +1,32 @@
 /*jslint  node: true, plusplus: true*/
 'use strict';
-var enums = require('./enums.js');
+var enums = require('./enums.js'),
+    SendToAll;
 
-function analyse(msg) {
+function analyse(msg, communications) {
+    SendToAll = communications.SendToAll;
     var GameMessage = enums.STOC.STOC_GAME_MSG[msg];
     switch (msg) {
-    case GameMessage.Retry:
+    case 'MSG_RETRY':
         onRetry();
         return 1;
-    case GameMessage.Hint:
+    case 'MSG_HINT':
         onHint(cmsg);
         break;
-    case GameMessage.Win:
+    case 'MSG_WAITING':
+        //missing?
+        break;
+    case 'MSG_START':
+        //missing?
+    case 'MSG_WIN':
         onWin(cmsg);
         return 2;
+    case 'MSG_UPDATE_DATA':
+        //missing?
+        break;
+    case 'MSG_UPDATE_CARD':
+        //missing?
+        break;
     case GameMessage.SelectBattleCmd:
         onSelectBattleCmd(cmsg);
         return 1;
