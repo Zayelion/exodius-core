@@ -1,4 +1,4 @@
-/*jslint node:true, plusplus : true */
+/*jslint node:true, plusplus : true, bitwise : true */
 
 'use strict';
 
@@ -6,7 +6,10 @@ var sqlite3 = require('sqlite3').verbose(), // access databse file */
     fs = require('fs'), // access file system */
     ffi = require('ffi'), // allows dynamic linking of the ocgapi.dll, critical; */
     ref = require('ref'), // allows use of C++ pointers for C++ JS interactions, critical */
-    struct = require('ref-struct'); // allows use of C++ structures for C++ JS interactions, critical 
+    struct = require('ref-struct'), // allows use of C++ structures for C++ JS interactions, critical 
+    arrayType = require('ref-array'), // allows generation of arraybuffers to use as pointers (engineBuffer[x])
+    char = ref.types.char,
+    char_engineBuffer = arrayType(char);
 //queryfor = require('./sql-queries'); * /
 
 function constructDatabase(targetDB, targetFolder) {
@@ -119,20 +122,16 @@ function banlist(lflist) {
     return output;
 }
 
-function HandleMessage(reader, raw, len) {
-    while (reader.BaseStream.Position < len) {
-        var msg = reader.ReadByte(),
-            result = -1;
-        if (_analyzer != null)
-            result = _analyzer.Invoke(msg, reader, raw);
-        if (result != 0)
-            return result;
-    }
-    return 0;
-}
-
 
 function wrapDuel(duel) {
+    duel.duelEndProc = function () {
+        //defined by whatever is using this
+        //think of this as a virtual function.
+    };
+    duel.analyze = function () {
+        //defined by whatever is using this
+        //think of this as a virtual function.
+    };
     duel.InitPlayers = function (startLp, startHand, drawCount) {
         duel.set_player_info(duel.pointer, 0, startLp, startHand, drawCount);
         duel.set_player_info(duel.pointer, 1, startLp, startHand, drawCount);
@@ -147,25 +146,28 @@ function wrapDuel(duel) {
         duel.start_duel(duel.pointer, options);
     };
     duel.Proces = function () {
-        var fail = 0,
-            result,
-            len,
-            arr;
-        while (true) {
-            result = duel.process(duel.pointer);
-            len = result & 0xFFFF;
-
-            if (len > 0) {
-                fail = 0;
-                arr = new Buffer(4096);
-                duel.get_message(duel.pointer, _buffer);
-                Marshal.Copy(_buffer, arr, 0, 4096);
-                result = HandleMessage(new BinaryReader(new Buffer(arr)), arr, len);
-                if (result !== 0)
-                    return result;
-            } else if (++fail == 10)
-                return -1;
+        //char engineBuffer[0x1000]; // pointer
+        var engineBuffer = ref.alloc(char_engineBuffer(0x1000)),
+            engFlag = 0,
+            engLen = 0,
+            stop = 0,
+            result;
+        while (!stop) {
+            if (engFlag === 2) {
+                break;
+            }
+            result = process(duel.pointer);
+            engLen = result & 0xffff;
+            engFlag = result >> 16;
+            if (engLen > 0) {
+                duel.get_message(duel.pointer, engineBuffer);
+                stop = duel.analyze(engineBuffer, engLen);
+            }
         }
+        if (stop === 2) {
+            duel.duelEndProc();
+        }
+
     };
     duel.SetResponse = function () {}; //this is two functions in iceygo's code.
     duel.QueryFieldCount = function () {};
