@@ -122,7 +122,6 @@ function banlist(lflist) {
     return output;
 }
 
-
 function wrapDuel(duel) {
     duel.duelEndProc = function () {
         //defined by whatever is using this
