@@ -242,12 +242,8 @@ function initDuel(dllLocation, settings) {
     ocgapi.set_card_reader(new Buffer([0])); // connect the pointer functions
     ocgapi.set_script_reader(new Buffer([0]));
     ocgapi.set_message_handler(new Buffer([0]));
-    duelptr = ocgapi.create_duel(seed); //generate a duel.
-    return wrapDuel({
-        pointer: duelptr,
-        duel: ocgapi,
-        banlist: banlist(settings.lflist)
-    });
+    ocgapi.pointer = ocgapi.create_duel(seed); //generate a duel.
+    return wrapDuel(ocgapi);
 }
 
 
@@ -257,14 +253,7 @@ function ocgwrapper(dllLocation, cardDBLocation, scriptFolder, lflist) {
         script_reader: constructScripts(scriptFolder), //needs to be configurable
         lflist: fs.readFileSync(lflist).toString().split("\r\n")
     };
-    fs.exists(dllLocation, function (dllDetected) {
-        if (dllDetected) {
-            return initDuel;
-        } else {
-            var errorMessage = '[OCGWrapper]:Error could not find OCGCore at: ' + dllLocation;
-            throw new Error(errorMessage);
-        }
-    });
+    return initDuel(dllLocation, settings);
 }
 
 module.exports = ocgwrapper;

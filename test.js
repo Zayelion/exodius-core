@@ -11,9 +11,11 @@ var dll = process.env.DLL || __dirname + '\\ocgwrapper\\ocgcore-64.dll',
     WebSocketServer = require('ws').Server,
     drawcount = 5;
 
-var game = new Duel(dll, db, scripts, lflist),
-    pduel = game.pointer;
-console.log(game);
+setTimeout(function () {
+    var game = new Duel(dll, db, scripts, lflist),
+        pduel = game.pointer;
+    console.log(game);
 
-pduel.set_player_info(pduel, 0, 8000, 1, drawcount);
-pduel.set_player_info(pduel, 1, 8000, 1, drawcount);
+    game.set_player_info(pduel, 0, 8000, 1, drawcount);
+    game.set_player_info(pduel, 1, 8000, 1, drawcount);
+}, 2000);
