@@ -12,7 +12,7 @@ var sqlite3 = require('sqlite3').verbose(), // access databse file */
     byte_array = arrayType(ref.types.byte);
 //queryfor = require('./sql-queries'); * /
 
-function constructDatabase(targetDB, targetFolder) {
+function constructDatabase(targetDB) {
     // create instance of card database in memory 2MB, prevents sychronous read request and server lag.
     var database,
         cards = {};
@@ -24,8 +24,6 @@ function constructDatabase(targetDB, targetFolder) {
         }
         cards[row.id] = row;
     }
-    console.log(targetDB, targetFolder);
-
     database = new sqlite3.Database(targetDB, sqlite3.OPEN_READ);
     database.on("open", function () {
         console.log("database was opened successfully");
