@@ -27,6 +27,9 @@ function analyse(msg, communications) {
     case 'MSG_UPDATE_CARD':
         //missing?
         break;
+    case 'MSG_UPDATE_CARD':
+        //missing?
+        break;
     case GameMessage.SelectBattleCmd:
         onSelectBattleCmd(cmsg);
         return 1;

@@ -24,6 +24,7 @@ function constructDatabase(targetDB, targetFolder) {
         }
         cards[row.id] = row;
     }
+    console.log(targetDB, targetFolder);
 
     database = new sqlite3.Database(targetDB, sqlite3.OPEN_READ);
     database.on("open", function () {
